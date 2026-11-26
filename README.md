@@ -2,7 +2,7 @@
 
 一个 Windows 托盘小工具：同时监控 **罗技 G304**（2.4G Lightspeed）与 **VGN N75 Pro**（2.4G）的电池电量，低电量时弹出提醒。
 
-单文件 exe，约 47 KB，不依赖 .NET SDK，也无需安装任何运行时（使用 Windows 自带的 .NET Framework 4.8）。
+单文件 exe，约 65 KB，不依赖 .NET SDK，也无需安装任何运行时（使用 Windows 自带的 .NET Framework 4.8）。
 
 ![预览](docs/preview.png)
 
