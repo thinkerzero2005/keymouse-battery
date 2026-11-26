@@ -19,10 +19,12 @@ namespace KeyMouseBattery.UI
 
         private readonly Settings _settings;
         private readonly BatteryMonitor _monitor;
+        private readonly HistoryLog _history;
         private readonly DeviceCard _mouseCard;
         private readonly DeviceCard _keyboardCard;
         private readonly TextBlock _intervalText;
         private readonly TextBlock _lastPollText;
+        private readonly TextBlock _weeklyText;
         private readonly Border _thresholdPill;
         private readonly TextBlock _thresholdText;
         private readonly Border _autoStartPill;
@@ -30,18 +32,20 @@ namespace KeyMouseBattery.UI
         private readonly Border _refreshPill;
         private readonly TextBlock _refreshText;
 
+        private StatsWindow _usageWindow;
         private bool _allowClose;
 
         public event EventHandler SettingsChanged;
 
-        public MainWindow(Settings settings, BatteryMonitor monitor)
+        public MainWindow(Settings settings, BatteryMonitor monitor, HistoryLog history)
         {
             _settings = settings;
             _monitor = monitor;
+            _history = history;
 
             Title = "外设电量";
             Width = 420;
-            Height = 470;
+            Height = 508;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             Background = Brushes.Transparent;
@@ -110,6 +114,44 @@ namespace KeyMouseBattery.UI
             footInfo.Children.Add(_intervalText);
             footInfo.Children.Add(_lastPollText);
             content.Children.Add(footInfo);
+
+            // 本周概览（点击打开使用情况）
+            _weeklyText = new TextBlock
+            {
+                Text = "本周概览：正在积累数据…",
+                FontSize = 10.5,
+                Foreground = Palette.TextSecondary,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var overviewGrid = new Grid();
+            overviewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            overviewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(_weeklyText, 0);
+            overviewGrid.Children.Add(_weeklyText);
+            var detailLink = new TextBlock
+            {
+                Text = "详情 ›",
+                FontSize = 10.5,
+                Foreground = Palette.Accent,
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(detailLink, 1);
+            overviewGrid.Children.Add(detailLink);
+
+            var overview = new Border
+            {
+                Background = Palette.AccentSoft,
+                CornerRadius = new CornerRadius(9),
+                Padding = new Thickness(10, 7, 10, 7),
+                Margin = new Thickness(2, 10, 2, 0),
+                Cursor = Cursors.Hand,
+                ToolTip = "查看使用情况与日志",
+                Child = overviewGrid
+            };
+            overview.MouseLeftButtonUp += delegate { OpenUsage(); };
+            content.Children.Add(overview);
 
             Grid.SetRow(content, 1);
             layout.Children.Add(content);
@@ -230,6 +272,7 @@ namespace KeyMouseBattery.UI
 
             UpdateThresholdPill();
             UpdateAutoStartPill();
+            UpdateWeeklyLine();
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -369,6 +412,38 @@ namespace KeyMouseBattery.UI
         {
             Hide();
             ShowInTaskbar = false;
+        }
+
+        private void OpenUsage()
+        {
+            if (_usageWindow == null)
+            {
+                _usageWindow = new StatsWindow(_history);
+                _usageWindow.Closed += delegate { _usageWindow = null; };
+            }
+            _usageWindow.ShowPanel();
+        }
+
+        private void UpdateWeeklyLine()
+        {
+            UsageSummary summary = UsageSummary.Load(_history);
+            _weeklyText.Text = "本周 " + Describe(summary.Get("G304"), "G304", false)
+                + " ｜ " + Describe(summary.Get("N75 Pro"), "N75 Pro", true);
+        }
+
+        private static string Describe(DeviceWeeklyStats stats, string name, bool keyboard)
+        {
+            if (stats == null || !stats.HasData) return name + " 采样中";
+
+            string text;
+            if (stats.DrainPerDay > 0.01)
+                text = name + " -" + stats.DrainPerDay.ToString("0.0") + "%/天";
+            else
+                text = name + " 无明显耗电";
+
+            if (keyboard && stats.ChargeCount > 0)
+                text += " · 充 " + stats.ChargeCount + " 次";
+            return text;
         }
 
         private void CycleThreshold()

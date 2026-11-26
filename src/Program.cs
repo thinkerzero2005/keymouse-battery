@@ -67,8 +67,11 @@ namespace KeyMouseBattery
                 settings.Save();
             }
 
-            var monitor = new BatteryMonitor(settings);
-            var window = new MainWindow(settings, monitor);
+            var history = new HistoryLog();
+            history.Note("程序启动", "");
+
+            var monitor = new BatteryMonitor(settings, history);
+            var window = new MainWindow(settings, monitor, history);
 
             TrayIcon tray = null;
             Action exit = delegate
@@ -76,11 +79,13 @@ namespace KeyMouseBattery
                 window.AllowClose();
                 monitor.Stop();
                 if (tray != null) tray.Dispose();
+                history.Note("程序退出", "");
+                history.Dispose();
                 window.Close();
                 app.Shutdown();
             };
 
-            tray = new TrayIcon(settings, monitor, window.ShowPanel, exit);
+            tray = new TrayIcon(settings, monitor, history, window.ShowPanel, exit);
             window.SettingsChanged += delegate { tray.Reapply(); };
             tray.Changed += delegate { window.RefreshState(); };
 

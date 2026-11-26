@@ -26,11 +26,14 @@ try {
             'src\Services\Settings.cs',
             'src\Services\AutoStart.cs',
             'src\Services\BatteryMonitor.cs',
+            'src\Services\HistoryLog.cs',
+            'src\Services\Statistics.cs',
             'src\UI\Palette.cs',
             'src\UI\BatteryBar.cs',
             'src\UI\DeviceCard.cs',
             'src\UI\TrayIcon.cs',
             'src\UI\MainWindow.cs',
+            'src\UI\StatsWindow.cs',
             'src\Program.cs'
         )
         $refs = @(

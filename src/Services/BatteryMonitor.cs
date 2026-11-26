@@ -8,6 +8,7 @@ namespace KeyMouseBattery.Services
     internal sealed class BatteryMonitor
     {
         private readonly Settings _settings;
+        private readonly HistoryLog _history;
         private readonly LogitechG304 _mouseDriver = new LogitechG304();
         private readonly VgnKeyboard _keyboardDriver = new VgnKeyboard();
         private readonly AutoResetEvent _wake = new AutoResetEvent(false);
@@ -23,9 +24,10 @@ namespace KeyMouseBattery.Services
 
         public event EventHandler Updated;
 
-        public BatteryMonitor(Settings settings)
+        public BatteryMonitor(Settings settings, HistoryLog history)
         {
             _settings = settings;
+            _history = history;
         }
 
         public void Start()
@@ -74,6 +76,9 @@ namespace KeyMouseBattery.Services
                     Mouse = _mouseDriver.Poll();
                     Keyboard = _keyboardDriver.Poll();
                     LastPoll = DateTime.Now;
+
+                    if (_history != null)
+                        _history.Process("G304", Mouse, "N75 Pro", Keyboard);
                 }
                 catch (Exception)
                 {

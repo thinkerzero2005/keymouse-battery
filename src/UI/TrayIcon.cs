@@ -13,6 +13,7 @@ namespace KeyMouseBattery.UI
     {
         private readonly Settings _settings;
         private readonly BatteryMonitor _monitor;
+        private readonly HistoryLog _history;
         private readonly NotifyIcon _notify;
         private readonly ToolStripMenuItem _autoStartItem;
         private readonly bool[] _lowNotified = new bool[2];
@@ -24,10 +25,11 @@ namespace KeyMouseBattery.UI
 
         public event EventHandler Changed;
 
-        public TrayIcon(Settings settings, BatteryMonitor monitor, Action showPanel, Action exit)
+        public TrayIcon(Settings settings, BatteryMonitor monitor, HistoryLog history, Action showPanel, Action exit)
         {
             _settings = settings;
             _monitor = monitor;
+            _history = history;
 
             var menu = new ContextMenuStrip();
             menu.ShowImageMargin = false;
@@ -120,6 +122,8 @@ namespace KeyMouseBattery.UI
                     model + " 电量不足",
                     string.Format("{0}仅剩 {1}%，请及时更换电池。", label, reading.Percent),
                     ToolTipIcon.Warning);
+                if (_history != null)
+                    _history.Event(model, reading, "低电量提醒", reading.Percent + "%");
             }
             else if (reading.Percent > _settings.Threshold + 5)
             {
